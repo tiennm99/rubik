@@ -5,11 +5,10 @@ export default defineConfig({
     base: '/rubik/',
     plugins: [svelte()],
     build: {
-        outDir: '../dist',
+        outDir: 'dist',
         emptyOutDir: true,
         rollupOptions: {
             treeshake: 'smallest'
         }
-    },
-    root: '.'
+    }
 });
