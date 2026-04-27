@@ -54,6 +54,15 @@
             onUndo: () => undo()
         });
 
+        function clearSolvePlan() {
+            solveQueue = [];
+            solveCursor = 0;
+        }
+
+        function checkSolved() {
+            if (isSolved(cubies)) onSolved?.();
+        }
+
         // Animate one move and append to history. Used by both manual input
         // (triggerMove) and the step-by-step solver (solveStep).
         async function animateAndCommit(name) {
@@ -77,10 +86,7 @@
             clearSolvePlan();
             busy = true;
             const alg = generateScramble(20);
-            const moves = parseAlgorithm(alg);
-            for (const m of moves) {
-                applyMove(cubies, m);
-            }
+            for (const m of parseAlgorithm(alg)) applyMove(cubies, m);
             syncMeshes(meshes);
             history = []; // scramble clears history
             onMove?.(`[scramble] ${alg}`);
@@ -89,8 +95,7 @@
 
         async function undo() {
             if (busy || history.length === 0) return;
-            const lastName = history.pop();
-            const spec = inverseMove(getMoveSpec(lastName));
+            const spec = inverseMove(getMoveSpec(history.pop()));
             busy = true;
             await animateMove({ parentGroup: group, meshes, cubies, spec });
             busy = false;
@@ -108,6 +113,19 @@
             return true;
         }
 
+        // Lazy-load cubejs and compute the full solution. Returns the move
+        // names array, or [] if already solved / on failure.
+        async function computeSolvePlan() {
+            try {
+                const { solve: solveCubies } = await import('../lib/core/solver.js');
+                const algorithm = await solveCubies(cubies);
+                return parseAlgorithm(algorithm).map((m) => m.name);
+            } catch (e) {
+                console.error('Solver failed:', e);
+                return [];
+            }
+        }
+
         // Step-by-step solver. First click computes the solution and animates
         // move #1; each subsequent click advances one move. Cursor exposed
         // via $bindable so ControlsPanel can show progress + remaining moves.
@@ -118,19 +136,11 @@
                 // the 4–5 s table init + solve, otherwise the user could mutate
                 // cubies under our feet and we'd play a stale algorithm.
                 busy = true;
-                try {
-                    const { solve: solveCubies } = await import('../lib/core/solver.js');
-                    const algorithm = await solveCubies(cubies);
-                    const moves = parseAlgorithm(algorithm).map((m) => m.name);
-                    if (moves.length === 0) return; // already solved
-                    solveQueue = moves;
-                    solveCursor = 0;
-                } catch (e) {
-                    console.error('Solver failed:', e);
-                    return;
-                } finally {
-                    busy = false;
-                }
+                const moves = await computeSolvePlan();
+                busy = false;
+                if (moves.length === 0) return;
+                solveQueue = moves;
+                solveCursor = 0;
             }
             if (solveCursor >= solveQueue.length) {
                 clearSolvePlan();
@@ -140,16 +150,6 @@
             solveCursor += 1;
             if (solveCursor >= solveQueue.length) clearSolvePlan();
             checkSolved();
-        }
-
-        function clearSolvePlan() {
-            if (solveQueue.length === 0 && solveCursor === 0) return;
-            solveQueue = [];
-            solveCursor = 0;
-        }
-
-        function checkSolved() {
-            if (isSolved(cubies)) onSolved?.();
         }
 
         controller = { scramble, reset, undo, triggerMove, solveStep };

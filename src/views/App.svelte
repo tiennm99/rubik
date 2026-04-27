@@ -7,21 +7,14 @@
     let moveLog = $state([]);
     let timerMs = $state(0);
     let timerRunning = $state(false);
-    let solving = $state(false);
     let solveQueue = $state([]);
     let solveCursor = $state(0);
     let busy = $state(false);
 
     let controller = $state(null);
 
-    async function runSolveStep() {
-        if (solving || !controller) return;
-        solving = true;
-        try {
-            await controller.solveStep();
-        } finally {
-            solving = false;
-        }
+    function runSolveStep() {
+        controller?.solveStep();
     }
 
     function commitMove(name) {
@@ -64,7 +57,6 @@
             {moveLog}
             {timerMs}
             {timerRunning}
-            {solving}
             {solveQueue}
             {solveCursor}
             {busy}

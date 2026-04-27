@@ -2,12 +2,12 @@
     let {
         moveLog, timerMs, timerRunning,
         onScramble, onReset, onUndo, onSolve,
-        solving = false,
         solveQueue = [],
         solveCursor = 0,
         busy = false
     } = $props();
 
+    function pad2(n) { return n.toString().padStart(2, '0'); }
     function formatTime(ms) {
         const totalCs = Math.floor(ms / 10);
         const cs = totalCs % 100;
@@ -16,12 +16,13 @@
         const min = Math.floor(totalSec / 60);
         return `${pad2(min)}:${pad2(sec)}.${pad2(cs)}`;
     }
-    function pad2(n) { return n.toString().padStart(2, '0'); }
 
     let visibleLog = $derived(moveLog.slice(-40));
-
     let solveActive = $derived(solveQueue.length > 0);
     let nextMove = $derived(solveActive ? solveQueue[solveCursor] : null);
+    // "Solving…" is shown during the cubejs lazy-load + table init: busy is
+    // true but no plan has materialized yet.
+    let solving = $derived(busy && !solveActive);
     let solveLabel = $derived(
         solving
             ? 'Solving…'
@@ -42,7 +43,7 @@
 
 <section class="actions">
     <button onclick={onScramble} disabled={busy}>Scramble (Space)</button>
-    <button onclick={onSolve} disabled={solving || busy} class:solve-active={solveActive}>
+    <button onclick={onSolve} disabled={busy} class:solve-active={solveActive}>
         {solveLabel}
     </button>
     <button onclick={onUndo} disabled={busy}>Undo (Z)</button>
