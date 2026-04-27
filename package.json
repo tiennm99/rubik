@@ -1,0 +1,32 @@
+{
+  "name": "rubik",
+  "description": "Interactive 3D Rubik's 3x3 cube simulator in the browser (Three.js + Svelte)",
+  "version": "0.1.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tiennm99/rubik.git"
+  },
+  "author": "tiennm99",
+  "license": "Apache-2.0",
+  "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+  "bugs": {
+    "url": "https://github.com/tiennm99/rubik/issues"
+  },
+  "homepage": "https://tiennm99.github.io/rubik/",
+  "scripts": {
+    "dev": "vite --config vite/config.dev.mjs",
+    "dev:codeserver": "vite --config vite/config.codeserver.mjs",
+    "build": "vite build --config vite/config.prod.mjs",
+    "preview": "vite preview --config vite/config.prod.mjs"
+  },
+  "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0",
+    "three": "^0.171.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "svelte": "^5.19.0",
+    "vite": "^6.3.6"
+  }
+}
