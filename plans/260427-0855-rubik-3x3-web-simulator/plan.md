@@ -17,16 +17,17 @@ Browser-based interactive 3x3 Rubik's cube. Three.js rendering, drag-to-rotate f
 
 ## Phase Status
 
-| # | Phase | Status | LOC budget |
+| # | Phase | Status | LOC actual |
 |---|-------|--------|-----------|
-| 0 | [Project scaffold](./phase-00-project-scaffold.md) | pending | ~150 |
-| 1 | [Cube model + move logic](./phase-01-cube-model.md) | pending | ~300 |
-| 2 | [Three.js scene + cubie meshes](./phase-02-rendering.md) | pending | ~200 |
-| 3 | [Move animation (Group reparent + Tween)](./phase-03-animation.md) | pending | ~120 |
-| 4 | [Drag-to-rotate gesture](./phase-04-interaction.md) | pending | ~180 |
-| 5 | [Keyboard + Svelte UI shell](./phase-05-ui-shell.md) | pending | ~250 |
-| 6 | [Polish, build, GH Pages deploy](./phase-06-polish-deploy.md) | pending | ~80 |
-| 7 | [Solver (cubejs) — deferred post-MVP](./phase-07-solver-deferred.md) | deferred | ~120 |
+| 0 | [Project scaffold](./phase-00-project-scaffold.md) | done | scaffolded (Vite + Svelte 5 + Three.js + Tween) |
+| 1 | [Cube model + move logic](./phase-01-cube-model.md) | done | 272 (core/) |
+| 2 | [Three.js scene + cubie meshes](./phase-02-rendering.md) | done | 163 (scene+meshes) |
+| 3 | [Move animation (Group reparent + Tween)](./phase-03-animation.md) | done | 78 (animate-move) |
+| 4 | [Drag-to-rotate gesture](./phase-04-interaction.md) | done | 252 (gesture-math + pointer-gesture) |
+| 5 | [Keyboard + Svelte UI shell](./phase-05-ui-shell.md) | done | 399 (views/ + keyboard) |
+| 6 | [Polish, build, GH Pages deploy](./phase-06-polish-deploy.md) | done | dist=550 KB (144 KB gz); CI workflow live |
+| 7 | [Solver (cubejs) — deferred post-MVP](./phase-07-solver-deferred.md) | done | 116 (cube-to-facelets + solver) + Solve button; lazy-loaded chunk |
+| T | Vitest unit tests for core | done | 9 specs, 39 tests, ~3 s |
 
 ## Research
 

@@ -8,8 +8,19 @@
     let isAnimating = $state(false);
     let timerMs = $state(0);
     let timerRunning = $state(false);
+    let solving = $state(false);
 
     let controller = $state(null);
+
+    async function runSolve() {
+        if (solving || !controller) return;
+        solving = true;
+        try {
+            await controller.solve();
+        } finally {
+            solving = false;
+        }
+    }
 
     function commitMove(name) {
         moveLog = [...moveLog, name];
@@ -52,9 +63,11 @@
             {moveLog}
             {timerMs}
             {timerRunning}
+            {solving}
             onScramble={() => controller?.scramble()}
             onReset={() => { controller?.reset(); moveLog = []; timerMs = 0; stopTimer(); }}
             onUndo={() => controller?.undo()}
+            onSolve={runSolve}
         />
     </aside>
 </main>

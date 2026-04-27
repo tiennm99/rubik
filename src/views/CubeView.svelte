@@ -87,11 +87,27 @@
             history = [];
         }
 
+        async function solve() {
+            if (busy) return null;
+            const { solve: solveCubies } = await import('../lib/core/solver.js');
+            const algorithm = await solveCubies(cubies);
+            const moves = parseAlgorithm(algorithm);
+            for (const m of moves) {
+                busy = true;
+                await animateMove({ parentGroup: group, meshes, cubies, spec: m });
+                busy = false;
+                history.push(m.name);
+                onMove?.(m.name);
+            }
+            checkSolved();
+            return algorithm;
+        }
+
         function checkSolved() {
             if (isSolved(cubies)) onSolved?.();
         }
 
-        controller = { scramble, reset, undo, triggerMove };
+        controller = { scramble, reset, undo, triggerMove, solve };
 
         let rafId = 0;
         const loop = () => {

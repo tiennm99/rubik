@@ -1,5 +1,9 @@
 <script>
-    let { moveLog, timerMs, timerRunning, onScramble, onReset, onUndo } = $props();
+    let {
+        moveLog, timerMs, timerRunning,
+        onScramble, onReset, onUndo, onSolve,
+        solving = false
+    } = $props();
 
     function formatTime(ms) {
         const totalCs = Math.floor(ms / 10);
@@ -25,6 +29,9 @@
 
 <section class="actions">
     <button onclick={onScramble}>Scramble (Space)</button>
+    <button onclick={onSolve} disabled={solving}>
+        {solving ? 'Solving…' : 'Solve'}
+    </button>
     <button onclick={onUndo}>Undo (Z)</button>
     <button onclick={onReset}>Reset (Esc)</button>
 </section>

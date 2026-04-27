@@ -18,15 +18,19 @@
     "dev": "vite --config vite/config.dev.mjs",
     "dev:codeserver": "vite --config vite/config.codeserver.mjs",
     "build": "vite build --config vite/config.prod.mjs",
-    "preview": "vite preview --config vite/config.prod.mjs"
+    "preview": "vite preview --config vite/config.prod.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@tweenjs/tween.js": "^25.0.0",
+    "cubejs": "^1.3.2",
     "three": "^0.171.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "svelte": "^5.19.0",
-    "vite": "^6.3.6"
+    "vite": "^6.3.6",
+    "vitest": "^4.1.5"
   }
 }
