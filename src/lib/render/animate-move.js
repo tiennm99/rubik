@@ -5,14 +5,19 @@
 // `applyMoveFn` is called at the end so the cubie model reflects the new state.
 
 import { Group, Quaternion, Vector3 } from 'three';
-import { Tween, Easing, update as tweenUpdate } from '@tweenjs/tween.js';
+import { Tween, Easing, Group as TweenGroup } from '@tweenjs/tween.js';
 import { applyMove, HALF_PI } from '../core/apply-move.js';
 import { syncMeshes } from './cubie-meshes.js';
 
 const AXIS_INDEX = { x: 0, y: 1, z: 2 };
 
+// In tween.js v25 tweens are no longer auto-registered to a default group;
+// the module-level update() does not advance them. Use an explicit Group and
+// hand every new Tween a reference to it.
+const TWEENS = new TweenGroup();
+
 export function tickTweens() {
-    tweenUpdate(performance.now());
+    TWEENS.update(performance.now());
 }
 
 export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 200 }) {
@@ -32,7 +37,7 @@ export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 20
         const targetAngle = spec.sign * HALF_PI * spec.count;
         const state = { a: 0 };
 
-        new Tween(state)
+        new Tween(state, TWEENS)
             .to({ a: targetAngle }, durationMs)
             .easing(Easing.Cubic.Out)
             .onUpdate(() => {
@@ -56,7 +61,7 @@ export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 20
 export function snapAndAnimate({ parentGroup, pivot, meshes, cubies, spec, fromAngle, toAngle, durationMs = 120 }) {
     return new Promise((resolve) => {
         const state = { a: fromAngle };
-        new Tween(state)
+        new Tween(state, TWEENS)
             .to({ a: toAngle }, durationMs)
             .easing(Easing.Cubic.Out)
             .onUpdate(() => { pivot.rotation[spec.axis] = state.a; })
