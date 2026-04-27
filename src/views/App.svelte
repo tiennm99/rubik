@@ -9,14 +9,16 @@
     let timerMs = $state(0);
     let timerRunning = $state(false);
     let solving = $state(false);
+    let solveQueue = $state([]);
+    let solveCursor = $state(0);
 
     let controller = $state(null);
 
-    async function runSolve() {
+    async function runSolveStep() {
         if (solving || !controller) return;
         solving = true;
         try {
-            await controller.solve();
+            await controller.solveStep();
         } finally {
             solving = false;
         }
@@ -53,6 +55,8 @@
     <section class="cube-pane">
         <CubeView
             bind:controller
+            bind:solveQueue
+            bind:solveCursor
             {cubies}
             onMove={commitMove}
             onSolved={stopTimer}
@@ -64,6 +68,8 @@
             {timerMs}
             {timerRunning}
             {solving}
+            {solveQueue}
+            {solveCursor}
             onScramble={() => controller?.scramble()}
             onReset={() => {
                 if (controller?.reset()) {
@@ -73,7 +79,7 @@
                 }
             }}
             onUndo={() => controller?.undo()}
-            onSolve={runSolve}
+            onSolve={runSolveStep}
         />
     </aside>
 </main>

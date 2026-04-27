@@ -12,7 +12,14 @@
     import { parseAlgorithm } from '../lib/core/move-parser.js';
     import { isSolved } from '../lib/core/solved-check.js';
 
-    let { cubies, onMove, onSolved, controller = $bindable(null) } = $props();
+    let {
+        cubies,
+        onMove,
+        onSolved,
+        controller = $bindable(null),
+        solveQueue = $bindable([]),
+        solveCursor = $bindable(0)
+    } = $props();
 
     let canvas;
     let busy = false;
@@ -34,6 +41,7 @@
             setBusy: (v) => { busy = v; },
             onMoveCommitted: (name) => {
                 history.push(name);
+                clearSolvePlan();
                 onMove?.(name);
                 checkSolved();
             }
@@ -46,19 +54,27 @@
             onUndo: () => undo()
         });
 
-        async function triggerMove(name) {
-            if (busy) return;
+        // Animate one move and append to history. Used by both manual input
+        // (triggerMove) and the step-by-step solver (solveStep).
+        async function animateAndCommit(name) {
             const spec = getMoveSpec(name);
             busy = true;
             await animateMove({ parentGroup: group, meshes, cubies, spec });
             busy = false;
             history.push(name);
             onMove?.(name);
+        }
+
+        async function triggerMove(name) {
+            if (busy) return;
+            clearSolvePlan();
+            await animateAndCommit(name);
             checkSolved();
         }
 
         async function scramble() {
             if (busy) return;
+            clearSolvePlan();
             busy = true;
             const alg = generateScramble(20);
             const moves = parseAlgorithm(alg);
@@ -79,38 +95,54 @@
             busy = true;
             await animateMove({ parentGroup: group, meshes, cubies, spec });
             busy = false;
+            // Step the solve cursor back so the same move can be replayed.
+            if (solveCursor > 0) solveCursor -= 1;
             checkSolved();
         }
 
         function reset() {
             if (busy) return false;
+            clearSolvePlan();
             resetCubies(cubies);
             syncMeshes(meshes);
             history = [];
             return true;
         }
 
-        async function solve() {
-            if (busy) return null;
-            const { solve: solveCubies } = await import('../lib/core/solver.js');
-            const algorithm = await solveCubies(cubies);
-            const moves = parseAlgorithm(algorithm);
-            for (const m of moves) {
-                busy = true;
-                await animateMove({ parentGroup: group, meshes, cubies, spec: m });
-                busy = false;
-                history.push(m.name);
-                onMove?.(m.name);
+        // Step-by-step solver. First click computes the solution and animates
+        // move #1; each subsequent click advances one move. Cursor exposed
+        // via $bindable so ControlsPanel can show progress + remaining moves.
+        async function solveStep() {
+            if (busy) return;
+            if (solveQueue.length === 0) {
+                const { solve: solveCubies } = await import('../lib/core/solver.js');
+                const algorithm = await solveCubies(cubies);
+                const moves = parseAlgorithm(algorithm).map((m) => m.name);
+                if (moves.length === 0) return; // already solved
+                solveQueue = moves;
+                solveCursor = 0;
             }
+            if (solveCursor >= solveQueue.length) {
+                clearSolvePlan();
+                return;
+            }
+            await animateAndCommit(solveQueue[solveCursor]);
+            solveCursor += 1;
+            if (solveCursor >= solveQueue.length) clearSolvePlan();
             checkSolved();
-            return algorithm;
+        }
+
+        function clearSolvePlan() {
+            if (solveQueue.length === 0 && solveCursor === 0) return;
+            solveQueue = [];
+            solveCursor = 0;
         }
 
         function checkSolved() {
             if (isSolved(cubies)) onSolved?.();
         }
 
-        controller = { scramble, reset, undo, triggerMove, solve };
+        controller = { scramble, reset, undo, triggerMove, solveStep };
 
         let rafId = 0;
         const loop = () => {

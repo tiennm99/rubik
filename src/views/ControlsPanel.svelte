@@ -2,7 +2,9 @@
     let {
         moveLog, timerMs, timerRunning,
         onScramble, onReset, onUndo, onSolve,
-        solving = false
+        solving = false,
+        solveQueue = [],
+        solveCursor = 0
     } = $props();
 
     function formatTime(ms) {
@@ -16,6 +18,16 @@
     function pad2(n) { return n.toString().padStart(2, '0'); }
 
     let visibleLog = $derived(moveLog.slice(-40));
+
+    let solveActive = $derived(solveQueue.length > 0);
+    let nextMove = $derived(solveActive ? solveQueue[solveCursor] : null);
+    let solveLabel = $derived(
+        solving
+            ? 'Solving…'
+            : solveActive
+                ? `Next: ${nextMove}  (${solveCursor + 1}/${solveQueue.length})`
+                : 'Solve step-by-step'
+    );
 </script>
 
 <header>
@@ -29,12 +41,28 @@
 
 <section class="actions">
     <button onclick={onScramble}>Scramble (Space)</button>
-    <button onclick={onSolve} disabled={solving}>
-        {solving ? 'Solving…' : 'Solve'}
+    <button onclick={onSolve} disabled={solving} class:solve-active={solveActive}>
+        {solveLabel}
     </button>
     <button onclick={onUndo}>Undo (Z)</button>
     <button onclick={onReset}>Reset (Esc)</button>
 </section>
+
+{#if solveActive}
+    <section class="plan">
+        <h2>Solve plan</h2>
+        <p class="plan-hint">Click <b>{nextMove}</b> next. Undo to step back.</p>
+        <div class="plan-body">
+            {#each solveQueue as move, i}
+                <span
+                    class="move"
+                    class:done={i < solveCursor}
+                    class:next={i === solveCursor}
+                >{move}</span>
+            {/each}
+        </div>
+    </section>
+{/if}
 
 <section class="log">
     <h2>Moves</h2>
@@ -104,6 +132,52 @@
     .actions button:hover {
         background: #25252e;
         border-color: #3a3a46;
+    }
+    .actions button.solve-active {
+        background: #1f2a18;
+        border-color: #4d6a3a;
+        color: #d8efb6;
+    }
+    .actions button.solve-active:hover {
+        background: #283520;
+        border-color: #5e7f48;
+    }
+    .plan {
+        margin-bottom: 18px;
+        padding: 10px;
+        background: #15171a;
+        border: 1px solid #2a3424;
+        border-radius: 4px;
+    }
+    .plan h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #98c66f;
+        margin: 0 0 6px;
+    }
+    .plan-hint {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: #889a78;
+    }
+    .plan-hint b { color: #d8efb6; }
+    .plan-body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 6px;
+        font-family: 'Menlo', 'Consolas', monospace;
+        font-size: 12px;
+        max-height: 110px;
+        overflow-y: auto;
+    }
+    .plan .move.done { color: #4a5546; text-decoration: line-through; }
+    .plan .move.next {
+        color: #0a0a0c;
+        background: #cfe39c;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: 700;
     }
     .log h2, .legend h2 {
         font-size: 11px;
