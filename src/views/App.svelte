@@ -65,7 +65,13 @@
             {timerRunning}
             {solving}
             onScramble={() => controller?.scramble()}
-            onReset={() => { controller?.reset(); moveLog = []; timerMs = 0; stopTimer(); }}
+            onReset={() => {
+                if (controller?.reset()) {
+                    moveLog = [];
+                    timerMs = 0;
+                    stopTimer();
+                }
+            }}
             onUndo={() => controller?.undo()}
             onSolve={runSolve}
         />

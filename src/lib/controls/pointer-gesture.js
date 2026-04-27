@@ -25,7 +25,7 @@ const STATE_IDLE = 0;
 const STATE_PROBING = 1;
 const STATE_DRAGGING = 2;
 
-export function setupPointerGesture({ canvas, camera, controls, parentGroup, meshes, cubies, onMoveCommitted, isBusy }) {
+export function setupPointerGesture({ canvas, camera, controls, parentGroup, meshes, cubies, onMoveCommitted, isBusy, setBusy }) {
     const raycaster = new Raycaster();
     const ndc = new Vector2();
     const projectToScreen = makeProjectToScreen(camera, canvas);
@@ -69,6 +69,11 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
     }
 
     function lockAxis(dx, dy) {
+        if (isBusy && isBusy()) {
+            // Animation started during PROBING (e.g. keyboard R) — abort.
+            cleanup();
+            return;
+        }
         const hitWorldPos = hitMesh.getWorldPosition(new Vector3());
         const decision = chooseRotationAxis({
             hitFaceAxis,
@@ -90,6 +95,9 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
         }
         curAngle = 0;
         state = STATE_DRAGGING;
+        // Block keyboard moves, scramble, undo, reset, solve while a drag is
+        // mid-flight — they all gate on isBusy from CubeView.
+        setBusy?.(true);
     }
 
     function onPointerMove(e) {
@@ -146,6 +154,7 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
         state = STATE_IDLE;
         pivot = null;
         hitMesh = null;
+        setBusy?.(false);
     }
 
     function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }

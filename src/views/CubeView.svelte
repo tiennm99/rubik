@@ -31,6 +31,7 @@
             meshes,
             cubies,
             isBusy: () => busy,
+            setBusy: (v) => { busy = v; },
             onMoveCommitted: (name) => {
                 history.push(name);
                 onMove?.(name);
@@ -82,9 +83,11 @@
         }
 
         function reset() {
+            if (busy) return false;
             resetCubies(cubies);
             syncMeshes(meshes);
             history = [];
+            return true;
         }
 
         async function solve() {
