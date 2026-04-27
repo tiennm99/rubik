@@ -36,7 +36,14 @@ export function chooseRotationAxis({ hitFaceAxis, hitWorldPos, dx, dy, projectFn
 
     const drag = new Vector2(dx, dy);
     const projs = screenDirs.map((dir) => dir.dot(drag));
-    const dragAxisIdx = Math.abs(projs[0]) > Math.abs(projs[1]) ? 0 : 1;
+    let dragAxisIdx;
+    if (Math.abs(projs[0]) + Math.abs(projs[1]) < 1e-3) {
+        // Both in-plane axes project nearly to a point on screen (camera looks
+        // straight down the face normal). Fall back to raw screen drag axes.
+        dragAxisIdx = Math.abs(dx) >= Math.abs(dy) ? 0 : 1;
+    } else {
+        dragAxisIdx = Math.abs(projs[0]) > Math.abs(projs[1]) ? 0 : 1;
+    }
     const dragAxis = inPlane[dragAxisIdx];
     const rotAxis = inPlane[1 - dragAxisIdx];
 

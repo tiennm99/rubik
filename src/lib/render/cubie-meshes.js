@@ -94,3 +94,21 @@ export function readMeshIntoCubie(mesh) {
         mesh.quaternion.w
     ];
 }
+
+// renderer.dispose() does not free per-mesh material or geometry GPU buffers.
+// Walk the meshes, dedup materials by ref, and release everything.
+export function disposeCubieMeshes(meshes) {
+    const seen = new Set();
+    for (const mesh of meshes) {
+        for (const mat of mesh.material) {
+            if (mat && !seen.has(mat)) {
+                seen.add(mat);
+                mat.dispose();
+            }
+        }
+    }
+    if (geometrySingleton) {
+        geometrySingleton.dispose();
+        geometrySingleton = null;
+    }
+}

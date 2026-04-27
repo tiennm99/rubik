@@ -41,6 +41,10 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
     let signMul = 1;
     let pixelsAxis = new Vector2();
     let curAngle = 0;
+    // Track whether *we* set the busy flag; only release it on cleanup if so.
+    // Without this, a busy-during-PROBING bail would clear a busy flag set by
+    // an unrelated keyboard-driven animation that's still in flight.
+    let ownedBusy = false;
 
     function getNDC(e) {
         const rect = canvas.getBoundingClientRect();
@@ -70,8 +74,9 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
 
     function lockAxis(dx, dy) {
         if (isBusy && isBusy()) {
-            // Animation started during PROBING (e.g. keyboard R) — abort.
-            cleanup();
+            // Keyboard animation started during PROBING. We never owned busy,
+            // so abort this gesture without clearing it.
+            abortGesture();
             return;
         }
         const hitWorldPos = hitMesh.getWorldPosition(new Vector3());
@@ -95,13 +100,14 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
         }
         curAngle = 0;
         state = STATE_DRAGGING;
-        // Block keyboard moves, scramble, undo, reset, solve while a drag is
-        // mid-flight — they all gate on isBusy from CubeView.
+        // We now own the busy gate — block keyboard, scramble, undo, etc.
         setBusy?.(true);
+        ownedBusy = true;
     }
 
     function onPointerMove(e) {
         if (state === STATE_IDLE) return;
+        if (e.pointerId !== pointerId) return;
         const dx = e.clientX - downX;
         const dy = e.clientY - downY;
         if (state === STATE_PROBING) {
@@ -115,9 +121,10 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
         pivot.rotation[pivotAxis] = curAngle;
     }
 
-    function onPointerUp() {
+    function onPointerUp(e) {
+        if (e.pointerId !== pointerId) return;
         if (state !== STATE_DRAGGING) {
-            cleanup();
+            abortGesture();
             return;
         }
         const turns = Math.round(curAngle / HALF_PI);
@@ -129,7 +136,7 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
                 parentGroup, pivot, meshes, cubies,
                 spec: dummy,
                 fromAngle: curAngle, toAngle: 0, durationMs: 100
-            }).then(cleanup);
+            }).then(finishGesture);
             return;
         }
 
@@ -141,20 +148,37 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
             fromAngle: curAngle, toAngle: targetAngle, durationMs: 120
         }).then(() => {
             onMoveCommitted?.(specToName(spec));
-            cleanup();
+            finishGesture();
         });
     }
 
-    function cleanup() {
-        if (pointerId !== null) {
-            try { canvas.releasePointerCapture(pointerId); } catch {}
-            pointerId = null;
-        }
+    // Tear down a gesture that NEVER reached DRAGGING — leaves busy alone.
+    function abortGesture() {
+        releasePointer();
         controls.enabled = true;
         state = STATE_IDLE;
         pivot = null;
         hitMesh = null;
-        setBusy?.(false);
+    }
+
+    // Tear down a gesture that DID reach DRAGGING — releases busy.
+    function finishGesture() {
+        releasePointer();
+        controls.enabled = true;
+        state = STATE_IDLE;
+        pivot = null;
+        hitMesh = null;
+        if (ownedBusy) {
+            setBusy?.(false);
+            ownedBusy = false;
+        }
+    }
+
+    function releasePointer() {
+        if (pointerId !== null) {
+            try { canvas.releasePointerCapture(pointerId); } catch {}
+            pointerId = null;
+        }
     }
 
     function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -170,6 +194,12 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
             canvas.removeEventListener('pointermove', onPointerMove);
             canvas.removeEventListener('pointerup', onPointerUp);
             canvas.removeEventListener('pointercancel', onPointerUp);
+            // If unmount happens mid-drag, release busy so the parent isn't
+            // permanently locked. Safe even if !ownedBusy (no-op).
+            if (ownedBusy) {
+                setBusy?.(false);
+                ownedBusy = false;
+            }
         }
     };
 }

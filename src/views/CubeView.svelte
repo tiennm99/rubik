@@ -1,8 +1,8 @@
 <script>
     import { onMount } from 'svelte';
     import { initScene } from '../lib/render/scene-setup.js';
-    import { buildCubieMeshes, syncMeshes } from '../lib/render/cubie-meshes.js';
-    import { animateMove, tickTweens } from '../lib/render/animate-move.js';
+    import { buildCubieMeshes, syncMeshes, disposeCubieMeshes } from '../lib/render/cubie-meshes.js';
+    import { animateMove, tickTweens, clearTweens } from '../lib/render/animate-move.js';
     import { setupPointerGesture } from '../lib/controls/pointer-gesture.js';
     import { setupKeyboard } from '../lib/controls/keyboard.js';
     import { getMoveSpec, inverseMove } from '../lib/core/move-definitions.js';
@@ -18,11 +18,11 @@
         onSolved,
         controller = $bindable(null),
         solveQueue = $bindable([]),
-        solveCursor = $bindable(0)
+        solveCursor = $bindable(0),
+        busy = $bindable(false)
     } = $props();
 
     let canvas;
-    let busy = false;
     let history = [];
 
     onMount(() => {
@@ -90,7 +90,6 @@
         async function undo() {
             if (busy || history.length === 0) return;
             const lastName = history.pop();
-            if (lastName.startsWith('[')) return; // cannot undo a scramble
             const spec = inverseMove(getMoveSpec(lastName));
             busy = true;
             await animateMove({ parentGroup: group, meshes, cubies, spec });
@@ -115,12 +114,23 @@
         async function solveStep() {
             if (busy) return;
             if (solveQueue.length === 0) {
-                const { solve: solveCubies } = await import('../lib/core/solver.js');
-                const algorithm = await solveCubies(cubies);
-                const moves = parseAlgorithm(algorithm).map((m) => m.name);
-                if (moves.length === 0) return; // already solved
-                solveQueue = moves;
-                solveCursor = 0;
+                // Gate input through `busy` while we lazy-load cubejs and run
+                // the 4–5 s table init + solve, otherwise the user could mutate
+                // cubies under our feet and we'd play a stale algorithm.
+                busy = true;
+                try {
+                    const { solve: solveCubies } = await import('../lib/core/solver.js');
+                    const algorithm = await solveCubies(cubies);
+                    const moves = parseAlgorithm(algorithm).map((m) => m.name);
+                    if (moves.length === 0) return; // already solved
+                    solveQueue = moves;
+                    solveCursor = 0;
+                } catch (e) {
+                    console.error('Solver failed:', e);
+                    return;
+                } finally {
+                    busy = false;
+                }
             }
             if (solveCursor >= solveQueue.length) {
                 clearSolvePlan();
@@ -156,12 +166,14 @@
             cancelAnimationFrame(rafId);
             gesture.dispose();
             kb.dispose();
+            clearTweens();
+            disposeCubieMeshes(meshes);
             sceneCtx.dispose();
         };
     });
 </script>
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} aria-label="Rubik's cube — drag a sticker to rotate that face, drag empty space to orbit"></canvas>
 
 <style>
     canvas {

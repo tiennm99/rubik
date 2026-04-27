@@ -4,7 +4,8 @@
         onScramble, onReset, onUndo, onSolve,
         solving = false,
         solveQueue = [],
-        solveCursor = 0
+        solveCursor = 0,
+        busy = false
     } = $props();
 
     function formatTime(ms) {
@@ -40,12 +41,12 @@
 </section>
 
 <section class="actions">
-    <button onclick={onScramble}>Scramble (Space)</button>
-    <button onclick={onSolve} disabled={solving} class:solve-active={solveActive}>
+    <button onclick={onScramble} disabled={busy}>Scramble (Space)</button>
+    <button onclick={onSolve} disabled={solving || busy} class:solve-active={solveActive}>
         {solveLabel}
     </button>
-    <button onclick={onUndo}>Undo (Z)</button>
-    <button onclick={onReset}>Reset (Esc)</button>
+    <button onclick={onUndo} disabled={busy}>Undo (Z)</button>
+    <button onclick={onReset} disabled={busy}>Reset (Esc)</button>
 </section>
 
 {#if solveActive}
@@ -70,7 +71,7 @@
         {#if visibleLog.length === 0}
             <span class="placeholder">No moves yet.</span>
         {:else}
-            {#each visibleLog as move (move + Math.random())}
+            {#each visibleLog as move, i (i)}
                 <span class="move">{move}</span>
             {/each}
         {/if}
@@ -129,9 +130,13 @@
         font-size: 13px;
         text-align: left;
     }
-    .actions button:hover {
+    .actions button:hover:not(:disabled) {
         background: #25252e;
         border-color: #3a3a46;
+    }
+    .actions button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     .actions button.solve-active {
         background: #1f2a18;

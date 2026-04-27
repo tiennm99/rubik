@@ -5,12 +5,12 @@
 
     let cubies = $state(createSolvedCube());
     let moveLog = $state([]);
-    let isAnimating = $state(false);
     let timerMs = $state(0);
     let timerRunning = $state(false);
     let solving = $state(false);
     let solveQueue = $state([]);
     let solveCursor = $state(0);
+    let busy = $state(false);
 
     let controller = $state(null);
 
@@ -45,10 +45,6 @@
     function stopTimer() {
         timerRunning = false;
     }
-
-    export function onSolved() {
-        stopTimer();
-    }
 </script>
 
 <main>
@@ -57,6 +53,7 @@
             bind:controller
             bind:solveQueue
             bind:solveCursor
+            bind:busy
             {cubies}
             onMove={commitMove}
             onSolved={stopTimer}
@@ -70,6 +67,7 @@
             {solving}
             {solveQueue}
             {solveCursor}
+            {busy}
             onScramble={() => controller?.scramble()}
             onReset={() => {
                 if (controller?.reset()) {

@@ -19,7 +19,12 @@ export async function initSolver() {
             const Cube = await loadCube();
             Cube.initSolver();
             return Cube;
-        })();
+        })().catch((err) => {
+            // Reset so a future caller can retry instead of getting the same
+            // rejection forever (e.g. transient OOM during table build).
+            initPromise = null;
+            throw err;
+        });
     }
     return initPromise;
 }

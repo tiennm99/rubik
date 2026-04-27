@@ -20,6 +20,12 @@ export function tickTweens() {
     TWEENS.update(performance.now());
 }
 
+// Cancel every in-flight tween. Call on CubeView unmount so leftover
+// onComplete callbacks don't reattach meshes onto an orphaned scene tree.
+export function clearTweens() {
+    TWEENS.removeAll();
+}
+
 export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 200 }) {
     return new Promise((resolve) => {
         const idx = AXIS_INDEX[spec.axis];
@@ -44,15 +50,20 @@ export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 20
                 pivot.rotation[spec.axis] = state.a;
             })
             .onComplete(() => {
-                pivot.rotation[spec.axis] = targetAngle;
-                pivot.updateMatrixWorld(true);
-                for (const mesh of moving) {
-                    parentGroup.attach(mesh);
+                try {
+                    pivot.rotation[spec.axis] = targetAngle;
+                    pivot.updateMatrixWorld(true);
+                    for (const mesh of moving) {
+                        parentGroup.attach(mesh);
+                    }
+                    parentGroup.remove(pivot);
+                    applyMove(cubies, spec);
+                    syncMeshes(meshes);
+                } finally {
+                    // Resolve even on failure so the awaiter never deadlocks
+                    // with busy=true.
+                    resolve();
                 }
-                parentGroup.remove(pivot);
-                applyMove(cubies, spec);
-                syncMeshes(meshes);
-                resolve();
             })
             .start();
     });
@@ -61,22 +72,24 @@ export function animateMove({ parentGroup, meshes, cubies, spec, durationMs = 20
 export function snapAndAnimate({ parentGroup, pivot, meshes, cubies, spec, fromAngle, toAngle, durationMs = 120 }) {
     return new Promise((resolve) => {
         const state = { a: fromAngle };
+        const wantApply = Math.abs(toAngle) > 1e-3;
         new Tween(state, TWEENS)
             .to({ a: toAngle }, durationMs)
             .easing(Easing.Cubic.Out)
             .onUpdate(() => { pivot.rotation[spec.axis] = state.a; })
             .onComplete(() => {
-                pivot.rotation[spec.axis] = toAngle;
-                pivot.updateMatrixWorld(true);
-                for (const mesh of [...pivot.children]) {
-                    parentGroup.attach(mesh);
+                try {
+                    pivot.rotation[spec.axis] = toAngle;
+                    pivot.updateMatrixWorld(true);
+                    for (const mesh of [...pivot.children]) {
+                        parentGroup.attach(mesh);
+                    }
+                    parentGroup.remove(pivot);
+                    if (wantApply) applyMove(cubies, spec);
+                    syncMeshes(meshes);
+                } finally {
+                    resolve(wantApply);
                 }
-                parentGroup.remove(pivot);
-                if (Math.abs(toAngle) > 1e-3) {
-                    applyMove(cubies, spec);
-                }
-                syncMeshes(meshes);
-                resolve(Math.abs(toAngle) > 1e-3);
             })
             .start();
     });
