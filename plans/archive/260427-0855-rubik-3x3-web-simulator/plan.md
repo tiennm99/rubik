@@ -1,8 +1,13 @@
 # Rubik's 3x3 Web Simulator — Implementation Plan
 
+**Status:** SHIPPED — archived 2026-04-27
 **Created:** 2026-04-27
 **Repo:** `tiennm99/rubik` → `https://tiennm99.github.io/rubik/`
 **Stack:** Vite + Svelte 5 (runes) + Three.js + Tween.js, plain JS
+
+> All phases (0–7) implemented. Step-by-step solver with visible plan
+> shipped on top. 41 vitest tests cover core logic. See `git log` for
+> commit history; review reports under `plans/reports/`.
 
 ## Goal
 

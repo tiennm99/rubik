@@ -4,9 +4,9 @@ Tracks upcoming work only. Completed milestones live in git log and `plans/`.
 
 ## Near-term
 
-- **Solver (Kociemba two-phase via cubejs).** Lazy-load behind a Solve button. Add Web Worker if init time is unacceptable on main thread. See `plans/260427-0855-rubik-3x3-web-simulator/phase-07-solver-deferred.md`.
 - **Move counter & best-time persistence.** Save best solve time per scramble length to localStorage.
 - **Color-blind mode.** Sticker outline / pattern overlay; toggle in the settings panel.
+- **Solver Web Worker.** Move the cubejs 4–5 s table init off the main thread so the first-paint stays responsive even on slower devices.
 
 ## Mid-term
 
