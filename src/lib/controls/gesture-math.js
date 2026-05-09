@@ -65,6 +65,21 @@ export function chooseRotationAxis({ hitFaceAxis, hitWorldPos, dx, dy, projectFn
     const motionScreen = projectFn(hitWorldPos.clone().add(motionWorld)).sub(screenOrigin);
     const signMul = motionScreen.dot(drag) >= 0 ? 1 : -1;
 
+    if (typeof globalThis !== 'undefined' && globalThis.RUBIK_DEBUG) {
+        console.log('[GESTURE]', {
+            hitFaceAxis,
+            hitWorldPos: [hitWorldPos.x.toFixed(3), hitWorldPos.y.toFixed(3), hitWorldPos.z.toFixed(3)],
+            drag: [dx, dy],
+            projs: projs.map((p) => p.toFixed(3)),
+            dragAxis,
+            rotAxis,
+            faceAnchor: [faceAnchor.x, faceAnchor.y, faceAnchor.z],
+            motionWorld: [motionWorld.x.toFixed(3), motionWorld.y.toFixed(3), motionWorld.z.toFixed(3)],
+            motionScreen: [motionScreen.x.toFixed(3), motionScreen.y.toFixed(3)],
+            signMul
+        });
+    }
+
     return {
         rotAxis,
         dragAxis,

@@ -80,6 +80,15 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
             return;
         }
         const hitWorldPos = hitMesh.getWorldPosition(new Vector3());
+        if (typeof globalThis !== 'undefined' && globalThis.RUBIK_DEBUG) {
+            const cubie = hitMesh.userData.cubie;
+            console.log('[HIT]', {
+                hitFaceAxis,
+                hitWorldPos: [hitWorldPos.x.toFixed(3), hitWorldPos.y.toFixed(3), hitWorldPos.z.toFixed(3)],
+                cubieHome: cubie.home,
+                cubiePosition: cubie.position
+            });
+        }
         const decision = chooseRotationAxis({
             hitFaceAxis,
             hitWorldPos,
@@ -143,6 +152,9 @@ export function setupPointerGesture({ canvas, camera, controls, parentGroup, mes
         const sign = turns > 0 ? 1 : -1;
         const count = Math.abs(turns) === 2 ? 2 : 1;
         const spec = { axis: pivotAxis, layer: layerIndex, sign, count, name: '' };
+        if (typeof globalThis !== 'undefined' && globalThis.RUBIK_DEBUG) {
+            console.log('[COMMIT]', { curAngle: curAngle.toFixed(3), turns, spec, name: specToName(spec) });
+        }
         snapAndAnimate({
             parentGroup, pivot, meshes, cubies, spec,
             fromAngle: curAngle, toAngle: targetAngle, durationMs: 120
