@@ -92,6 +92,45 @@ describe('chooseRotationAxis face-invariance: edges and corners agree with face-
     }
 });
 
+describe('chooseRotationAxis correctness: visual rotation matches drag direction', () => {
+    // For a small drag in direction d, the cubie at hitWorldPos must move on
+    // screen in approximately direction d. Equivalently, sign(curAngle) must
+    // equal sign(motionScreen · drag), where motionScreen is screen
+    // displacement under +1 rad rotation around rotAxis.
+    //
+    // Caller computes curAngle = (drag · pixelsAxis) * signMul, with
+    // pixelsAxis = screenDirs[dragAxisIdx]. So the correctness condition is:
+    //   sign((drag · pixelsAxis) * signMul) == sign(motionScreen · drag)
+    //
+    // This catches the dual-reference-frame bug where signMul was computed
+    // against `drag` but dragPx was measured against `pixelsAxis` — produces
+    // OPPOSITE rotation when drag and pixelsAxis are anti-aligned (e.g. drag
+    // DOWN with dragAxis='y', since pixelsAxis points screen UP).
+    for (const faceAxis of FACE_AXES) {
+        for (const faceSign of SIDES) {
+            const sideName = `${faceSign > 0 ? '+' : '-'}${faceAxis}`;
+            const center = vecOnFace(faceAxis, faceSign, {});
+            for (const drag of DRAGS) {
+                it(`${sideName} face center, drag ${drag.name}: pivot rotation moves cubie in drag direction`, () => {
+                    const r = callChoose(faceAxis, center, drag);
+                    const dragVec = new Vector2(drag.dx, drag.dy);
+                    const dragPx = r.screenDragDir.dot(dragVec);
+                    const curAngleSign = Math.sign(dragPx * r.signMul);
+
+                    // Compute screen motion for +1 rad rotation around rotAxis.
+                    const axisVec = { x: [1,0,0], y: [0,1,0], z: [0,0,1] }[r.rotAxis];
+                    const P = new Vector3(...center);
+                    const v = new Vector3().crossVectors(new Vector3(...axisVec), P);
+                    const motionScreen = isoProject(P.clone().add(v)).sub(isoProject(P));
+                    const expectedSign = Math.sign(motionScreen.dot(dragVec));
+
+                    expect(curAngleSign, `pivot rotation direction must match drag direction`).toBe(expectedSign);
+                });
+            }
+        }
+    }
+});
+
 describe('chooseRotationAxis: face-center sign convention smoke test', () => {
     // Pin expected rotAxis for each face × cardinal drag at the face center.
     // Locks in the convention so a future refactor of signMul math doesn't

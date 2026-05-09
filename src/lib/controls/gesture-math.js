@@ -63,22 +63,17 @@ export function chooseRotationAxis({ hitFaceAxis, hitWorldPos, dx, dy, projectFn
         .crossVectors(AXIS_VECS[rotAxis], faceAnchor)
         .normalize();
     const motionScreen = projectFn(hitWorldPos.clone().add(motionWorld)).sub(screenOrigin);
-    const signMul = motionScreen.dot(drag) >= 0 ? 1 : -1;
-
-    if (typeof globalThis !== 'undefined' && globalThis.RUBIK_DEBUG) {
-        console.log('[GESTURE]', {
-            hitFaceAxis,
-            hitWorldPos: [hitWorldPos.x.toFixed(3), hitWorldPos.y.toFixed(3), hitWorldPos.z.toFixed(3)],
-            drag: [dx, dy],
-            projs: projs.map((p) => p.toFixed(3)),
-            dragAxis,
-            rotAxis,
-            faceAnchor: [faceAnchor.x, faceAnchor.y, faceAnchor.z],
-            motionWorld: [motionWorld.x.toFixed(3), motionWorld.y.toFixed(3), motionWorld.z.toFixed(3)],
-            motionScreen: [motionScreen.x.toFixed(3), motionScreen.y.toFixed(3)],
-            signMul
-        });
-    }
+    // Compare motion against pixelsAxis (= screenDirs[dragAxisIdx]), NOT the
+    // raw drag vector. Reason: the caller's curAngle math is
+    //   curAngle = (drag · pixelsAxis) * signMul
+    // so dragPx is measured along pixelsAxis. For correctness we need
+    //   sign(curAngle) == sign(motionScreen · drag)
+    // which simplifies (when drag is along ±pixelsAxis) to
+    //   signMul == sign(motionScreen · pixelsAxis).
+    // Using `drag` here flips the sign whenever pixelsAxis and drag are
+    // anti-aligned (e.g. dragAxis='y' has pixelsAxis pointing screen UP since
+    // world +y = screen -y, but the user drags screen DOWN).
+    const signMul = motionScreen.dot(screenDirs[dragAxisIdx]) >= 0 ? 1 : -1;
 
     return {
         rotAxis,
