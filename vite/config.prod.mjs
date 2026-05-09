@@ -8,7 +8,10 @@ export default defineConfig({
         outDir: 'dist',
         emptyOutDir: true,
         rollupOptions: {
-            treeshake: 'smallest'
+            // 'smallest' drops cubejs's top-level `Cube.initSolver = ...` static-method
+            // assignments, producing `t.initSolver is not a function` at runtime.
+            // 'safest' (Rollup default) preserves these side-effectful writes.
+            treeshake: 'safest'
         }
     }
 });
