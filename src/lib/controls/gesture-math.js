@@ -49,8 +49,18 @@ export function chooseRotationAxis({ hitFaceAxis, hitWorldPos, dx, dy, projectFn
 
     // Determine sign so that positive screen-drag along screenDirs[dragAxisIdx]
     // produces a rotation whose induced motion at hitWorldPos points the same way.
+    //
+    // Anchor the cross product to the face-normal axis only (drop in-plane
+    // components of hitWorldPos). For edge/corner cubies the in-plane
+    // components leak into motionWorld as a face-normal velocity (β·F̂),
+    // which projects onto screen and can flip signMul under tilted cameras —
+    // making drag-to-rotate go the OPPOSITE direction. Face-anchored motion
+    // is purely tangential, so signMul is identical for every cubie on the
+    // same face (the physically correct invariant).
+    const faceAnchor = new Vector3();
+    faceAnchor[hitFaceAxis] = hitWorldPos[hitFaceAxis];
     const motionWorld = new Vector3()
-        .crossVectors(AXIS_VECS[rotAxis], hitWorldPos)
+        .crossVectors(AXIS_VECS[rotAxis], faceAnchor)
         .normalize();
     const motionScreen = projectFn(hitWorldPos.clone().add(motionWorld)).sub(screenOrigin);
     const signMul = motionScreen.dot(drag) >= 0 ? 1 : -1;
