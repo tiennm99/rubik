@@ -14,10 +14,10 @@ Live: <https://tiennm99.github.io/rubik/>
 ## Dev
 
 ```bash
-npm install
-npm run dev          # http://localhost:8080
-npm run dev:codeserver  # behind code-server proxy (set CODESERVER_HOST in .env.local)
-npm run build        # → ../dist
+pnpm install
+pnpm dev          # http://localhost:8080
+pnpm dev:codeserver  # behind code-server proxy (set CODESERVER_HOST in .env.local)
+pnpm build        # → ../dist
 ```
 
 ## Controls

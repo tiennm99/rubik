@@ -3,6 +3,7 @@
   "description": "Interactive 3D Rubik's 3x3 cube simulator in the browser (Three.js + Svelte)",
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@11.1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tiennm99/rubik.git"
@@ -33,9 +34,9 @@
     "vite": "^6.3.6",
     "vitest": "^4.1.5"
   },
-  "overrides": {
-    "cubejs": {
-      "npm": "^11.14.1"
+  "pnpm": {
+    "overrides": {
+      "cubejs>npm": "^11.14.1"
     }
   }
 }
