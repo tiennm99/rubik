@@ -7,11 +7,12 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         emptyOutDir: true,
-        rollupOptions: {
-            // 'smallest' drops cubejs's top-level `Cube.initSolver = ...` static-method
-            // assignments, producing `t.initSolver is not a function` at runtime.
-            // 'safest' (Rollup default) preserves these side-effectful writes.
-            treeshake: 'safest'
+        rolldownOptions: {
+            // Preserve cubejs's top-level `Cube.initSolver = ...` static-method
+            // assignments. Dropping them (aggressive tree-shake) produces
+            // `t.initSolver is not a function` at runtime.
+            // Vite 8 (Rolldown) uses rolldownOptions; treeshake:false = no tree-shaking.
+            treeshake: false
         }
     }
 });
