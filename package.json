@@ -26,13 +26,13 @@
   "dependencies": {
     "@tweenjs/tween.js": "^25.0.0",
     "cubejs": "^1.3.2",
-    "three": "^0.171.0"
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "svelte": "^5.55.7",
+    "svelte": "^5.55.9",
     "vite": "^8.0.0",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.7"
   },
   "pnpm": {
     "overrides": {
