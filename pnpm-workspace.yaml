@@ -1,2 +1,4 @@
 allowBuilds:
   esbuild: true
+overrides:
+  cubejs>npm: ^11.14.1
